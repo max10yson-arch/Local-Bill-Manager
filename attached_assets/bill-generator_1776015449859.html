@@ -1,0 +1,1137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Bill Generator — Parinay Saree</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --p:   #7B1338; --pd: #5a0d28; --plt: #fdf0f5;
+      --g:   #B08D57; --glt: #f5eed8;
+      --t:   #2c2c2c; --tm: #666; --tl: #999;
+      --bd:  #ddd;    --bg: #f4f0ea; --w: #fff;
+      --rad: 10px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--t); font-size: 15px; }
+
+    /* ── TOP BAR ── */
+    .topbar {
+      background: linear-gradient(135deg, var(--pd), var(--p));
+      color: #fff; height: 56px; display: flex; align-items: center;
+      gap: 12px; padding: 0 20px;
+      box-shadow: 0 2px 12px rgba(0,0,0,.28);
+      position: sticky; top: 0; z-index: 300;
+    }
+    .topbar img { height: 34px; filter: brightness(0) invert(1); }
+    .tb-brand .tb-title { font-size: 1.05rem; font-weight: 700; }
+    .tb-brand .tb-sub   { font-size: .65rem; opacity: .7; letter-spacing: .1em; text-transform: uppercase; }
+    .topbar .tb-right { margin-left: auto; display: flex; gap: 8px; }
+    .tb-btn {
+      background: rgba(255,255,255,.15); border: 1.5px solid rgba(255,255,255,.3);
+      color: #fff; border-radius: 8px; padding: 6px 14px;
+      font: inherit; font-size: .8rem; font-weight: 600;
+      cursor: pointer; transition: background .18s;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .tb-btn:hover { background: rgba(255,255,255,.28); }
+
+    /* ── LAYOUT ── */
+    .layout { display: grid; grid-template-columns: 410px 1fr; min-height: calc(100vh - 56px); }
+
+    /* ── FORM SIDE ── */
+    .form-side { background: var(--w); border-right: 1px solid var(--bd); padding: 20px; overflow-y: auto; }
+    .sec { margin-bottom: 22px; }
+    .sec-title {
+      font-size: .67rem; font-weight: 700; letter-spacing: .13em; text-transform: uppercase;
+      color: var(--p); border-bottom: 2px solid var(--plt); padding-bottom: 6px; margin-bottom: 12px;
+    }
+    .field { margin-bottom: 10px; }
+    .field label { display: block; font-size: .76rem; font-weight: 600; color: var(--tm); margin-bottom: 4px; }
+    .field input, .field textarea {
+      width: 100%; border: 1.5px solid var(--bd); border-radius: 8px;
+      padding: 8px 11px; font: inherit; font-size: .87rem; color: var(--t); outline: none;
+      transition: border-color .18s, box-shadow .18s;
+    }
+    .field input:focus, .field textarea:focus { border-color: var(--p); box-shadow: 0 0 0 3px rgba(123,19,56,.1); }
+    .field textarea { resize: vertical; min-height: 52px; }
+    .r2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+    /* add products button */
+    .add-prod-btn {
+      width: 100%; padding: 11px 16px;
+      background: linear-gradient(135deg, var(--pd), var(--p));
+      color: #fff; border: none; border-radius: 9px;
+      font: inherit; font-size: .9rem; font-weight: 600;
+      cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+      box-shadow: 0 3px 12px rgba(123,19,56,.25);
+      transition: transform .18s, box-shadow .18s;
+    }
+    .add-prod-btn:hover { transform: translateY(-1px); box-shadow: 0 5px 18px rgba(123,19,56,.35); }
+
+    /* line items */
+    #items-list { margin-top: 10px; display: flex; flex-direction: column; gap: 7px; min-height: 20px; }
+    .li-empty { text-align: center; padding: 13px; font-size: .82rem; color: var(--tl); border: 1.5px dashed var(--bd); border-radius: 9px; }
+    .li-card {
+      background: var(--bg); border: 1.5px solid var(--bd); border-radius: 9px;
+      padding: 9px 11px;
+      display: grid; grid-template-columns: 1fr 56px 80px 30px; gap: 8px; align-items: center;
+    }
+    .li-card:hover { border-color: var(--p); }
+    .li-name { font-size: .82rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .li-cat  { font-size: .68rem; color: var(--tl); }
+    .li-qty  {
+      width: 100%; border: 1.5px solid var(--bd); border-radius: 6px;
+      padding: 5px 4px; text-align: center; font: inherit; font-size: .84rem; outline: none;
+    }
+    .li-qty:focus { border-color: var(--p); }
+    .li-price { font-size: .83rem; font-weight: 700; color: var(--p); text-align: right; }
+    .li-del {
+      background: none; border: none; cursor: pointer;
+      color: #c0392b; font-size: 1rem; padding: 3px 5px;
+      border-radius: 5px; transition: background .15s; line-height: 1;
+    }
+    .li-del:hover { background: #fde8e8; }
+
+    /* charges */
+    .charge-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .charge-row label { min-width: 78px; font-size: .76rem; font-weight: 600; color: var(--tm); }
+    .charge-row input {
+      flex: 1; border: 1.5px solid var(--bd); border-radius: 8px;
+      padding: 7px 10px; font: inherit; font-size: .85rem; color: var(--t); outline: none;
+    }
+    .charge-row input:focus { border-color: var(--p); }
+    .charge-row .unit { font-size: .74rem; color: var(--tl); min-width: 16px; }
+
+    /* actions */
+    .actions { display: flex; flex-direction: column; gap: 8px; }
+    .btn {
+      display: flex; align-items: center; justify-content: center; gap: 7px; width: 100%;
+      padding: 11px 16px; border: none; border-radius: 9px;
+      font: inherit; font-size: .9rem; font-weight: 600; cursor: pointer;
+      transition: transform .18s, box-shadow .18s;
+    }
+    .btn-primary { background: linear-gradient(135deg,var(--pd),var(--p)); color:#fff; box-shadow:0 3px 12px rgba(123,19,56,.28); }
+    .btn-primary:hover { transform:translateY(-1px); box-shadow:0 5px 18px rgba(123,19,56,.38); }
+    .btn-gold { background: linear-gradient(135deg,#9a7840,var(--g)); color:#fff; box-shadow:0 3px 12px rgba(176,141,87,.28); }
+    .btn-gold:hover { transform:translateY(-1px); }
+    .btn-save { background: #1a7d45; color:#fff; box-shadow:0 3px 12px rgba(26,125,69,.28); }
+    .btn-save:hover { transform:translateY(-1px); }
+    .btn-outline { background:var(--w); color:var(--p); border:2px solid var(--p); }
+    .btn-outline:hover { background:var(--plt); }
+
+    /* ── PREVIEW SIDE ── */
+    .preview-side { padding: 24px 20px; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+    .preview-label { font-size: .67rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--tl); }
+
+    /* ── BILL ── */
+    #bill {
+      width: 100%; max-width: 660px; background: var(--w);
+      box-shadow: 0 6px 32px rgba(0,0,0,.15), 0 2px 8px rgba(0,0,0,.08);
+      border-radius: 3px; overflow: hidden;
+    }
+    .b-empty { text-align:center; padding:60px 24px; color:var(--tl); }
+    .b-empty .icon { font-size:2.6rem; margin-bottom:10px; }
+    .b-empty p { font-size:.88rem; }
+
+    /* bill pieces */
+    .b-hdr {
+      background: linear-gradient(135deg,var(--pd) 0%,var(--p) 60%,#9B2048 100%);
+      padding: 22px 26px 18px; display: flex; align-items: flex-start;
+      justify-content: space-between; gap: 16px; position: relative; overflow: hidden;
+    }
+    .b-hdr::before { content:''; position:absolute; top:-30px; right:-30px; width:120px; height:120px; background:rgba(255,255,255,.06); border-radius:50%; }
+    .b-hdr-l { display:flex; align-items:center; gap:14px; position:relative; z-index:1; }
+    .b-logo { width:68px; height:68px; background:rgba(255,255,255,.12); border:2px solid rgba(255,255,255,.22); border-radius:11px; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+    .b-logo img { width:58px; height:58px; object-fit:contain; filter:brightness(0) invert(1); }
+    .b-co-name { font-size:1.42rem; font-weight:700; color:#fff; line-height:1.2; }
+    .b-co-tag  { font-size:.65rem; letter-spacing:.14em; text-transform:uppercase; color:rgba(255,255,255,.62); margin:3px 0 7px; }
+    .b-co-info { font-size:.74rem; color:rgba(255,255,255,.8); line-height:1.6; }
+    .b-hdr-r   { text-align:right; color:#fff; flex-shrink:0; position:relative; z-index:1; }
+    .b-inv-lbl { font-size:.62rem; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--g); }
+    .b-inv-num { font-size:1.65rem; font-weight:700; line-height:1.2; }
+    .b-inv-dt  { font-size:.73rem; color:rgba(255,255,255,.7); margin-top:3px; }
+    .b-gold    { height:4px; background:linear-gradient(90deg,var(--g),#e8c97a,var(--g)); }
+    .b-meta    { display:grid; grid-template-columns:1fr 1fr; border-bottom:1px solid #e8e0d8; }
+    .b-mb      { padding:15px 20px; }
+    .b-mb:first-child { border-right:1px solid #e8e0d8; }
+    .b-ml { font-size:.62rem; font-weight:700; text-transform:uppercase; letter-spacing:.13em; color:var(--p); margin-bottom:7px; display:flex; align-items:center; gap:5px; }
+    .b-ml::before { content:''; width:12px; height:2px; background:var(--g); border-radius:2px; }
+    .b-mv { font-size:.83rem; color:var(--t); line-height:1.65; font-weight:500; }
+    .b-mv .bld { font-size:.93rem; font-weight:700; }
+    .b-tbl { width:100%; border-collapse:collapse; }
+    .b-tbl thead th { background:linear-gradient(180deg,var(--p),#8c1540); color:#fff; font-size:.65rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; padding:9px 13px; }
+    .b-tbl thead th:first-child { text-align:left; }
+    .b-tbl thead th:not(:first-child) { text-align:right; }
+    .b-tbl tbody tr { border-bottom:1px solid #eee; }
+    .b-tbl tbody tr:nth-child(even) { background:#faf7f4; }
+    .b-tbl tbody td { padding:9px 13px; font-size:.82rem; color:var(--t); }
+    .b-tbl tbody td:first-child { text-align:left; }
+    .b-tbl tbody td:not(:first-child) { text-align:right; }
+    .td-n { font-weight:600; } .td-c { font-size:.67rem; color:var(--tl); } .td-a { font-weight:700; color:var(--p); }
+    .b-totals { padding:13px 20px; display:flex; justify-content:flex-end; }
+    .tot-inner { width:250px; }
+    .t-row { display:flex; justify-content:space-between; padding:4px 0; font-size:.82rem; color:var(--tm); border-bottom:1px dashed #ddd; }
+    .t-row:last-of-type { border-bottom:none; }
+    .t-row .tl { font-weight:500; } .t-row .tv { font-weight:600; color:var(--t); }
+    .t-disc .tv { color:#18763e; }
+    .t-grand { margin-top:8px; background:linear-gradient(135deg,var(--pd),var(--p)); border-radius:8px; padding:10px 14px; display:flex; justify-content:space-between; align-items:center; color:#fff; }
+    .t-grand .gl { font-size:.7rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; }
+    .t-grand .gv { font-size:1.3rem; font-weight:700; color:var(--g); }
+    .b-ftr { border-top:1px solid #e8e0d8; background:#faf7f4; padding:15px 20px; }
+    .b-ftr-note { font-size:.75rem; color:var(--tm); line-height:1.65; margin-bottom:9px; }
+    .b-ftr-note strong { color:var(--p); }
+    .b-ftr-ty { font-size:.86rem; font-weight:700; color:var(--p); letter-spacing:.06em; text-transform:uppercase; text-align:center; padding:8px 0 0; border-top:2px solid #f0e0e8; }
+    .b-ftr-ty::before,.b-ftr-ty::after { content:'✦'; color:var(--g); margin:0 6px; }
+    .b-strip { height:5px; background:linear-gradient(90deg,var(--pd),var(--p),var(--g),var(--p),var(--pd)); }
+
+    /* ══════════════════════════════════════
+       PRODUCT MODAL
+    ══════════════════════════════════════ */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,.55); backdrop-filter: blur(3px);
+      z-index: 400; display: flex; align-items: center; justify-content: center; padding: 16px;
+      opacity: 0; pointer-events: none; transition: opacity .22s;
+    }
+    .modal-overlay.open { opacity: 1; pointer-events: all; }
+    .modal {
+      background: var(--w); border-radius: 14px; width: 100%; max-width: 700px;
+      max-height: 88vh; display: flex; flex-direction: column;
+      box-shadow: 0 20px 60px rgba(0,0,0,.3);
+      transform: scale(.96); transition: transform .22s;
+    }
+    .modal-overlay.open .modal { transform: scale(1); }
+    .modal-head {
+      padding: 18px 20px 14px;
+      border-bottom: 1px solid var(--bd);
+      display: flex; align-items: center; gap: 12px; flex-shrink: 0;
+    }
+    .modal-head h2 { font-size: 1rem; font-weight: 700; color: var(--p); flex: 1; }
+    .modal-search {
+      flex: 1; border: 1.5px solid var(--bd); border-radius: 8px;
+      padding: 8px 12px; font: inherit; font-size: .87rem; outline: none;
+    }
+    .modal-search:focus { border-color: var(--p); box-shadow: 0 0 0 3px rgba(123,19,56,.1); }
+    .modal-close-btn {
+      background: none; border: none; cursor: pointer; font-size: 1.3rem;
+      color: var(--tl); padding: 4px 7px; border-radius: 6px; transition: background .15s;
+    }
+    .modal-close-btn:hover { background: var(--plt); color: var(--p); }
+    /* tabs */
+    .modal-tabs { display: flex; gap: 6px; padding: 12px 20px 0; flex-shrink: 0; border-bottom: 1px solid var(--bd); }
+    .m-tab {
+      padding: 7px 16px; border: none; border-radius: 8px 8px 0 0; font: inherit;
+      font-size: .82rem; font-weight: 600; cursor: pointer; border-bottom: 2px solid transparent;
+      background: var(--bg); color: var(--tm); transition: all .18s;
+    }
+    .m-tab.active { background: var(--plt); color: var(--p); border-bottom-color: var(--p); }
+    /* products grid inside modal */
+    .modal-body { flex: 1; overflow-y: auto; padding: 14px 18px; }
+    .prod-section { margin-bottom: 18px; }
+    .prod-sec-title { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--tl); margin-bottom: 10px; padding-bottom: 4px; border-bottom: 1px solid var(--bd); }
+    .prod-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; }
+    .prod-card {
+      border: 1.5px solid var(--bd); border-radius: 9px; padding: 11px 12px;
+      cursor: pointer; transition: all .18s; background: var(--w);
+      display: flex; flex-direction: column; gap: 4px;
+    }
+    .prod-card:hover { border-color: var(--p); background: var(--plt); }
+    .prod-card.selected { border-color: var(--p); background: var(--plt); box-shadow: 0 0 0 2px var(--p); }
+    .pc-cat  { font-size: .65rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--tl); }
+    .pc-name { font-size: .84rem; font-weight: 600; color: var(--t); line-height: 1.3; }
+    .pc-price { font-size: .84rem; font-weight: 700; color: var(--p); margin-top: 2px; }
+    .pc-check { font-size: .9rem; color: #18763e; margin-top: 3px; display: none; }
+    .prod-card.selected .pc-check { display: block; }
+    .modal-none { text-align: center; padding: 30px; color: var(--tl); font-size: .9rem; }
+    /* modal footer */
+    .modal-foot {
+      border-top: 1px solid var(--bd); padding: 12px 20px;
+      display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
+    }
+    .m-sel-count { font-size: .82rem; color: var(--tm); }
+    .m-add-btn {
+      background: linear-gradient(135deg,var(--pd),var(--p)); color:#fff;
+      border: none; border-radius: 9px; padding: 9px 22px;
+      font: inherit; font-size: .88rem; font-weight: 600; cursor: pointer;
+      box-shadow: 0 3px 12px rgba(123,19,56,.25);
+    }
+    .m-add-btn:hover { box-shadow: 0 5px 16px rgba(123,19,56,.35); }
+
+    /* ══════════════════════════════════════
+       CUSTOMERS MODAL
+    ══════════════════════════════════════ */
+    .cust-head-info { font-size: .78rem; color: var(--tm); padding: 10px 20px; background: var(--glt); border-bottom: 1px solid var(--bd); flex-shrink:0; }
+    .cust-list { flex: 1; overflow-y: auto; padding: 14px 18px; display: flex; flex-direction: column; gap: 10px; }
+    .cust-card {
+      border: 1.5px solid var(--bd); border-radius: 10px; padding: 13px 16px;
+      background: var(--w); cursor: pointer; transition: border-color .18s;
+    }
+    .cust-card:hover { border-color: var(--p); }
+    .cust-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 6px; }
+    .cc-name { font-size: .92rem; font-weight: 700; color: var(--t); }
+    .cc-phone { font-size: .78rem; color: var(--tm); }
+    .cc-spent { font-size: .88rem; font-weight: 700; color: var(--p); white-space: nowrap; }
+    .cc-orders { font-size: .72rem; color: var(--tl); }
+    .cc-history { margin-top: 8px; display: flex; flex-direction: column; gap: 4px; display: none; }
+    .cust-card.expanded .cc-history { display: flex; }
+    .cc-inv {
+      background: var(--bg); border-radius: 7px; padding: 7px 10px;
+      font-size: .78rem; color: var(--tm);
+      display: flex; align-items: center; justify-content: space-between; gap: 6px;
+    }
+    .cc-inv-num { font-weight: 600; color: var(--p); }
+    .cc-inv-items { color: var(--tl); flex: 1; padding: 0 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .cc-inv-total { font-weight: 700; color: var(--t); }
+    .cust-empty { text-align: center; padding: 50px 24px; color: var(--tl); }
+    .cust-empty .icon { font-size: 2.4rem; margin-bottom: 10px; }
+    .cust-foot { border-top: 1px solid var(--bd); padding: 12px 20px; display: flex; gap: 8px; flex-shrink: 0; }
+    .c-exp-btn { flex: 1; background: linear-gradient(135deg,#9a7840,var(--g)); color:#fff; border:none; border-radius:9px; padding:9px 16px; font:inherit; font-size:.86rem; font-weight:600; cursor:pointer; }
+    .c-clear-btn { background: none; border: 2px solid #c0392b; color: #c0392b; border-radius: 9px; padding: 9px 14px; font: inherit; font-size: .86rem; font-weight: 600; cursor: pointer; transition: background .15s; }
+    .c-clear-btn:hover { background: #fde8e8; }
+
+    /* ── TOAST ── */
+    .toast {
+      position: fixed; bottom: 20px; right: 20px; padding: 11px 18px;
+      border-radius: 9px; font-size: .84rem; font-weight: 500; color: #fff;
+      background: var(--t); box-shadow: 0 4px 16px rgba(0,0,0,.22); z-index: 600;
+      transform: translateY(70px); opacity: 0;
+      transition: all .3s cubic-bezier(.34,1.56,.64,1); pointer-events: none;
+    }
+    .toast.show { transform: translateY(0); opacity: 1; }
+    .toast.ok  { background: #1a7d45; }
+    .toast.err { background: #c0392b; }
+    .toast.info { background: #2b6cb0; }
+
+    /* ── LOADER ── */
+    #loader {
+      position: fixed; inset: 0; background: rgba(244,240,234,.96); backdrop-filter: blur(3px);
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+      z-index: 500; transition: opacity .3s;
+    }
+    #loader.gone { opacity: 0; pointer-events: none; }
+    .spin { width: 42px; height: 42px; border: 4px solid var(--plt); border-top-color: var(--p); border-radius: 50%; animation: spin .7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #loader p { font-size: .88rem; color: var(--tm); font-weight: 500; }
+
+    /* ── PRINT ── */
+    @media print {
+      body { background: #fff; }
+      .topbar, .form-side, .preview-label, .modal-overlay, .toast, #loader { display: none !important; }
+      .layout { display: block; }
+      .preview-side { padding: 0; background: #fff; align-items: stretch; }
+      #bill { box-shadow: none; max-width: 100%; border-radius: 0; }
+      @page { margin: .8cm; }
+    }
+
+    /* ── MOBILE ── */
+    @media (max-width: 840px) {
+      .layout { grid-template-columns: 1fr; }
+      .form-side { border-right: none; border-bottom: 1px solid var(--bd); }
+      .preview-side { padding: 16px 12px; }
+      .b-hdr { flex-wrap: wrap; }
+      .b-hdr-r { text-align: left; }
+      .b-meta { grid-template-columns: 1fr; }
+      .b-mb:first-child { border-right: none; border-bottom: 1px solid #e8e0d8; }
+      .prod-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+    }
+
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-thumb { background: var(--bd); border-radius: 4px; }
+  </style>
+</head>
+<body>
+
+<!-- Loader -->
+<div id="loader"><div class="spin"></div><p>Loading products…</p></div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- ════════════════ PRODUCT MODAL ════════════════ -->
+<div class="modal-overlay" id="prod-modal-overlay" onclick="closeProdModalOnBg(event)">
+  <div class="modal" id="prod-modal">
+    <div class="modal-head">
+      <h2>🛍 Products</h2>
+      <input class="modal-search" id="modal-search" type="text" placeholder="Search products…" oninput="filterModalProducts()" autocomplete="off"/>
+      <button class="modal-close-btn" onclick="closeProdModal()">✕</button>
+    </div>
+    <div class="modal-tabs" id="modal-tabs">
+      <button class="m-tab active" data-tab="all" onclick="switchTab('all')">All</button>
+      <button class="m-tab" data-tab="Saree" onclick="switchTab('Saree')">Sarees</button>
+      <button class="m-tab" data-tab="Bedsheet" onclick="switchTab('Bedsheet')">Bedsheets</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-foot">
+      <span class="m-sel-count" id="m-sel-count">0 selected</span>
+      <button class="m-add-btn" onclick="addSelectedProducts()">＋ Add to Bill</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════ CUSTOMERS MODAL ════════════════ -->
+<div class="modal-overlay" id="cust-modal-overlay" onclick="closeCustModalOnBg(event)">
+  <div class="modal" id="cust-modal">
+    <div class="modal-head">
+      <h2>👥 Customer Records</h2>
+      <button class="modal-close-btn" onclick="closeCustModal()">✕</button>
+    </div>
+    <div class="cust-head-info" id="cust-summary">Loading customer records…</div>
+    <div class="cust-list" id="cust-list"></div>
+    <div class="cust-foot">
+      <button class="c-exp-btn" onclick="exportCustomers()">⬇️ Export customers.json</button>
+      <button class="c-clear-btn" onclick="clearCustomers()">🗑 Clear All</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════ TOP BAR ════════════════ -->
+<div class="topbar">
+  <img src="assets/ps-logo-compressed.png" alt="PS" onerror="this.style.display='none'"/>
+  <div class="tb-brand">
+    <div class="tb-title">Parinay Saree</div>
+    <div class="tb-sub">Bill Generator</div>
+  </div>
+  <div class="tb-right">
+    <button class="tb-btn" onclick="openCustModal()">👥 Customers</button>
+  </div>
+</div>
+
+<!-- ════════════════ MAIN LAYOUT ════════════════ -->
+<div class="layout">
+
+  <!-- ── FORM SIDE ── -->
+  <div class="form-side">
+
+    <div class="sec">
+      <div class="sec-title">🏪 Store Info</div>
+      <div class="field"><label>Store Name</label><input id="s-name" value="Parinay Saree" oninput="render()"/></div>
+      <div class="field"><label>Address</label><textarea id="s-addr" oninput="render()">Your Store Address, City, State — PIN</textarea></div>
+      <div class="r2">
+        <div class="field"><label>Phone</label><input id="s-phone" value="+91 98765 43210" oninput="render()"/></div>
+        <div class="field"><label>GST No.</label><input id="s-gst" placeholder="GSTIN (optional)" oninput="render()"/></div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-title">📄 Invoice Details</div>
+      <div class="r2">
+        <div class="field"><label>Invoice #</label><input id="inv-num" value="INV-1000" oninput="render()"/></div>
+        <div class="field"><label>Date</label><input id="inv-date" type="date" oninput="render()"/></div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-title">👤 Bill To</div>
+      <div class="field"><label>Customer Name</label><input id="c-name" placeholder="Full name" oninput="render()"/></div>
+      <div class="field"><label>Address</label><textarea id="c-addr" placeholder="Delivery address" oninput="render()"></textarea></div>
+      <div class="r2">
+        <div class="field"><label>Phone</label><input id="c-phone" placeholder="+91 XXXXX XXXXX" oninput="render()"/></div>
+        <div class="field"><label>City / PIN</label><input id="c-city" placeholder="City — PIN" oninput="render()"/></div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-title">🛍 Products</div>
+      <button class="add-prod-btn" onclick="openProdModal()">＋ Add Products from Catalog</button>
+      <div id="items-list"><div class="li-empty">No items yet. Click "Add Products" above.</div></div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-title">💰 Charges</div>
+      <div class="charge-row"><label>GST %</label><input id="gst-rate" type="number" value="5" min="0" max="100" step=".5" oninput="render()"/><span class="unit">%</span></div>
+      <div class="charge-row"><label>Discount %</label><input id="disc-rate" type="number" value="0" min="0" max="100" step="1" oninput="render()"/><span class="unit">%</span></div>
+      <div class="charge-row"><label>Delivery</label><input id="delivery" type="number" value="0" min="0" step="10" oninput="render()"/><span class="unit">₹</span></div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-title">📝 Notes</div>
+      <div class="field"><label>Payment / Custom Note</label><textarea id="notes" placeholder="E.g. Pay via UPI to parinay@upi" oninput="render()"></textarea></div>
+    </div>
+
+    <div class="sec actions">
+      <button class="btn btn-primary" onclick="printBill()">🖨️ Print / Save as PDF</button>
+      <button class="btn btn-gold" onclick="downloadBill()">⬇️ Download Bill (HTML)</button>
+      <button class="btn btn-save" onclick="saveCustomer()">💾 Save Customer Record</button>
+      <button class="btn btn-outline" onclick="newBill()">🔄 New Bill</button>
+    </div>
+
+  </div><!-- /form-side -->
+
+  <!-- ── PREVIEW SIDE ── -->
+  <div class="preview-side">
+    <div class="preview-label">Live Bill Preview</div>
+    <div id="bill">
+      <div class="b-empty" id="b-empty">
+        <div class="icon">🧾</div>
+        <p>Add at least one product to see the bill preview.</p>
+      </div>
+      <div id="b-content" style="display:none">
+        <div class="b-hdr">
+          <div class="b-hdr-l">
+            <div class="b-logo"><img src="assets/ps-logo-compressed.png" alt="PS" onerror="this.style.display='none'"/></div>
+            <div>
+              <div class="b-co-name" id="b-co-name">Parinay Saree</div>
+              <div class="b-co-tag">Weave Your World in Elegance</div>
+              <div class="b-co-info" id="b-co-info"></div>
+            </div>
+          </div>
+          <div class="b-hdr-r">
+            <div class="b-inv-lbl">Invoice</div>
+            <div class="b-inv-num" id="b-inv-num">#INV-1000</div>
+            <div class="b-inv-dt"  id="b-inv-dt"></div>
+          </div>
+        </div>
+        <div class="b-gold"></div>
+        <div class="b-meta">
+          <div class="b-mb">
+            <div class="b-ml">Bill To</div>
+            <div class="b-mv" id="b-cust"><span class="bld">—</span></div>
+          </div>
+          <div class="b-mb">
+            <div class="b-ml">Order For</div>
+            <div class="b-mv">Premium Sarees &amp; Home Linens</div>
+            <div style="font-size:.7rem;color:var(--tl);margin-top:4px;" id="b-gstin"></div>
+          </div>
+        </div>
+        <table class="b-tbl">
+          <thead><tr>
+            <th>#</th><th style="text-align:left;width:99%">Item Description</th>
+            <th>Qty</th><th>Rate</th><th>Amount</th>
+          </tr></thead>
+          <tbody id="b-tbody"></tbody>
+        </table>
+        <div class="b-totals">
+          <div class="tot-inner">
+            <div class="t-row"><span class="tl">Subtotal</span><span class="tv" id="b-sub">₹0</span></div>
+            <div class="t-row t-disc" id="b-disc-row" style="display:none">
+              <span class="tl">Discount (<span id="b-dp">0</span>%)</span>
+              <span class="tv" id="b-dv">-₹0</span>
+            </div>
+            <div class="t-row" id="b-gst-row" style="display:none">
+              <span class="tl">GST (<span id="b-gp">5</span>%)</span>
+              <span class="tv" id="b-gv">₹0</span>
+            </div>
+            <div class="t-row" id="b-del-row" style="display:none">
+              <span class="tl">Delivery</span><span class="tv" id="b-dlv">₹0</span>
+            </div>
+            <div class="t-grand">
+              <span class="gl">Total Amount</span>
+              <span class="gv" id="b-total">₹0</span>
+            </div>
+          </div>
+        </div>
+        <div class="b-ftr">
+          <div class="b-ftr-note"><strong id="b-fn">Parinay Saree</strong> — Thank you for your purchase! Contact: <strong id="b-fp">+91 98765 43210</strong></div>
+          <div class="b-ftr-note" id="b-notes-out" style="display:none"></div>
+          <div class="b-ftr-ty">Thank you for your business!</div>
+        </div>
+        <div class="b-strip"></div>
+      </div><!-- /b-content -->
+    </div><!-- /bill -->
+  </div><!-- /preview-side -->
+
+</div><!-- /layout -->
+
+<script>
+// ═══════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════
+var ALL_PRODUCTS = [];   // {id, name, priceNum, category}
+var ITEMS = [];          // {uid, name, priceNum, qty, category}
+var UID = 1;
+
+// For modal: which products are toggled
+var MODAL_SELECTED = {};   // uid → {id, name, priceNum, category}
+var MODAL_TAB = 'all';
+
+// ═══════════════════════════════════════════════
+//  BOOT
+// ═══════════════════════════════════════════════
+async function init() {
+  // Set date
+  document.getElementById('inv-date').value = todayStr();
+
+  // Set invoice number from localStorage (auto-increment)
+  var lastNum = parseInt(localStorage.getItem('parinay_inv_num') || '999');
+  var nextNum = lastNum + 1;
+  document.getElementById('inv-num').value = 'INV-' + nextNum;
+  // Don't save yet — save when bill is actually printed/downloaded/saved
+
+  // Fetch products
+  await fetchProducts();
+
+  // Hide loader
+  var l = document.getElementById('loader');
+  l.classList.add('gone');
+  setTimeout(function(){ l.style.display='none'; }, 350);
+
+  render();
+}
+
+async function fetchProducts() {
+  var REMOTE = 'https://raw.githubusercontent.com/Apoc-lengend/saree/main/data.json';
+  var LOCAL  = 'data.json';
+  var data   = null;
+
+  try {
+    var r = await fetch(REMOTE + '?t=' + Date.now(), {cache:'no-store'});
+    if (r.ok) data = await r.json();
+  } catch(e){}
+
+  if (!data) {
+    try {
+      var r2 = await fetch(LOCAL + '?t=' + Date.now(), {cache:'no-store'});
+      if (r2.ok) data = await r2.json();
+    } catch(e){}
+  }
+
+  if (data && data.products) {
+    var live = function(p){ return !p.status || p.status === 'live'; };
+    (data.products.sarees    || []).filter(live).forEach(function(p){
+      ALL_PRODUCTS.push({id:p.id, name:p.name, priceNum:parsePrice(p.price), category:'Saree'});
+    });
+    (data.products.bedsheets || []).filter(live).forEach(function(p){
+      ALL_PRODUCTS.push({id:p.id, name:p.name, priceNum:parsePrice(p.price), category:'Bedsheet'});
+    });
+    toast('✅ ' + ALL_PRODUCTS.length + ' products loaded', 'ok');
+  } else {
+    toast('⚠️ Cannot reach product catalog. Add custom items via the modal.', 'err');
+  }
+}
+
+// ═══════════════════════════════════════════════
+//  ITEMS — fixed, no getElementById inside
+// ═══════════════════════════════════════════════
+function rebuildList() {
+  var list = document.getElementById('items-list');
+  if (!ITEMS.length) {
+    list.innerHTML = '<div class="li-empty">No items yet. Click "Add Products" above.</div>';
+    return;
+  }
+  var html = ITEMS.map(function(it) {
+    return '<div class="li-card" id="li-'+it.uid+'">' +
+      '<div><div class="li-name">'+esc(it.name)+'</div><div class="li-cat">'+esc(it.category)+'</div></div>' +
+      '<input class="li-qty" type="number" min="1" value="'+it.qty+'"' +
+      ' oninput="changeQty('+it.uid+',this.value)" onchange="changeQty('+it.uid+',this.value)"/>' +
+      '<div class="li-price" id="lip-'+it.uid+'">'+fmt(it.priceNum * it.qty)+'</div>' +
+      '<button class="li-del" onclick="removeItem('+it.uid+')">✕</button>' +
+      '</div>';
+  }).join('');
+  list.innerHTML = html;
+}
+
+function addItemToList(name, priceNum, category) {
+  // If already in list, increment qty
+  var ex = null;
+  for (var i=0; i<ITEMS.length; i++) {
+    if (ITEMS[i].name === name && ITEMS[i].category === category) { ex = ITEMS[i]; break; }
+  }
+  if (ex) { ex.qty++; } else { ITEMS.push({uid: UID++, name:name, priceNum:priceNum, qty:1, category:category}); }
+}
+
+function removeItem(uid) {
+  // filter by uid (plain comparison, no arrow fn needed for safety)
+  var next = [];
+  for (var i=0; i<ITEMS.length; i++) { if (ITEMS[i].uid !== uid) next.push(ITEMS[i]); }
+  ITEMS = next;
+  rebuildList();
+  render();
+}
+
+function changeQty(uid, val) {
+  var q = Math.max(1, parseInt(val) || 1);
+  for (var i=0; i<ITEMS.length; i++) {
+    if (ITEMS[i].uid === uid) { ITEMS[i].qty = q; break; }
+  }
+  // update just the price cell without full rebuild (keeps cursor in input)
+  var el = document.getElementById('lip-'+uid);
+  for (var i=0; i<ITEMS.length; i++) {
+    if (ITEMS[i].uid === uid && el) { el.textContent = fmt(ITEMS[i].priceNum * ITEMS[i].qty); break; }
+  }
+  render();
+}
+
+// ═══════════════════════════════════════════════
+//  PRODUCT MODAL
+// ═══════════════════════════════════════════════
+function openProdModal() {
+  MODAL_SELECTED = {};
+  document.getElementById('modal-search').value = '';
+  switchTab('all');
+  document.getElementById('prod-modal-overlay').classList.add('open');
+  updateSelCount();
+  setTimeout(function(){ document.getElementById('modal-search').focus(); }, 200);
+}
+function closeProdModal() {
+  document.getElementById('prod-modal-overlay').classList.remove('open');
+}
+function closeProdModalOnBg(e) {
+  if (e.target === document.getElementById('prod-modal-overlay')) closeProdModal();
+}
+
+function switchTab(tab) {
+  MODAL_TAB = tab;
+  document.querySelectorAll('.m-tab').forEach(function(el){ el.classList.toggle('active', el.dataset.tab === tab); });
+  renderModalProducts();
+}
+
+function filterModalProducts() { renderModalProducts(); }
+
+function renderModalProducts() {
+  var q   = (document.getElementById('modal-search').value || '').toLowerCase().trim();
+  var tab = MODAL_TAB;
+
+  // Filter
+  var filtered = ALL_PRODUCTS.filter(function(p){
+    var matchTab = (tab === 'all') || (p.category === tab);
+    var matchQ   = !q || p.name.toLowerCase().indexOf(q) !== -1;
+    return matchTab && matchQ;
+  });
+
+  var body = document.getElementById('modal-body');
+
+  if (!filtered.length && !ALL_PRODUCTS.length) {
+    // No products loaded — show custom add option
+    body.innerHTML = '<div class="modal-none">No products loaded from catalog.<br/>Close this and ask your admin to check the data.json URL.<br/><br/>' +
+      '<button onclick="addCustomFromModal()" style="margin-top:12px;padding:9px 20px;background:var(--p);color:#fff;border:none;border-radius:8px;font:inherit;font-size:.86rem;font-weight:600;cursor:pointer;">+ Add Custom Item</button></div>';
+    return;
+  }
+
+  if (!filtered.length) {
+    body.innerHTML = '<div class="modal-none">No products match "<strong>'+esc(q)+'</strong>"</div>';
+    return;
+  }
+
+  // Group by category
+  var groups = {};
+  filtered.forEach(function(p){
+    if (!groups[p.category]) groups[p.category] = [];
+    groups[p.category].push(p);
+  });
+
+  var html = '';
+  Object.keys(groups).sort().forEach(function(cat){
+    html += '<div class="prod-section"><div class="prod-sec-title">'+esc(cat)+'s ('+groups[cat].length+')</div><div class="prod-grid">';
+    groups[cat].forEach(function(p){
+      var sel = !!MODAL_SELECTED[p.id];
+      html += '<div class="prod-card'+(sel?' selected':'')+'" onclick="toggleProduct(\''+p.id+'\')">' +
+        '<div class="pc-cat">'+esc(p.category)+'</div>' +
+        '<div class="pc-name">'+esc(p.name)+'</div>' +
+        '<div class="pc-price">'+fmt(p.priceNum)+'</div>' +
+        '<div class="pc-check">✔ Selected</div>' +
+        '</div>';
+    });
+    html += '</div></div>';
+  });
+
+  // Add custom item option at bottom
+  html += '<div style="text-align:center;padding:12px 0 4px;">' +
+    '<button onclick="addCustomFromModal()" style="padding:8px 18px;background:none;border:2px dashed var(--bd);border-radius:8px;font:inherit;font-size:.8rem;color:var(--tl);cursor:pointer;" ' +
+    'onmouseover="this.style.borderColor=\'var(--p)\';this.style.color=\'var(--p)\'" ' +
+    'onmouseout="this.style.borderColor=\'var(--bd)\';this.style.color=\'var(--tl)\'">＋ Add custom item</button></div>';
+
+  body.innerHTML = html;
+}
+
+function toggleProduct(prodId) {
+  var p = null;
+  for (var i=0; i<ALL_PRODUCTS.length; i++) { if (ALL_PRODUCTS[i].id === prodId) { p = ALL_PRODUCTS[i]; break; } }
+  if (!p) return;
+  if (MODAL_SELECTED[prodId]) { delete MODAL_SELECTED[prodId]; }
+  else { MODAL_SELECTED[prodId] = p; }
+  renderModalProducts();
+  updateSelCount();
+}
+
+function updateSelCount() {
+  var n = Object.keys(MODAL_SELECTED).length;
+  document.getElementById('m-sel-count').textContent = n ? n + ' selected' : '0 selected';
+}
+
+function addSelectedProducts() {
+  var keys = Object.keys(MODAL_SELECTED);
+  if (!keys.length) { toast('Select at least one product first.', 'err'); return; }
+  keys.forEach(function(k){ var p = MODAL_SELECTED[k]; addItemToList(p.name, p.priceNum, p.category); });
+  rebuildList();
+  render();
+  closeProdModal();
+  toast('✅ ' + keys.length + ' item(s) added to bill', 'ok');
+}
+
+function addCustomFromModal() {
+  closeProdModal();
+  setTimeout(function(){
+    var name = prompt('Custom item name:');
+    if (!name || !name.trim()) return;
+    var raw   = prompt('Unit price (₹):');
+    var price = parseFloat(raw);
+    if (isNaN(price) || price < 0) { toast('Invalid price entered.', 'err'); return; }
+    addItemToList(name.trim(), price, 'Custom');
+    rebuildList();
+    render();
+    toast('✅ Custom item added', 'ok');
+  }, 300);
+}
+
+// ═══════════════════════════════════════════════
+//  RENDER BILL PREVIEW
+// ═══════════════════════════════════════════════
+function render() {
+  var has = ITEMS.length > 0;
+  document.getElementById('b-empty').style.display   = has ? 'none' : '';
+  document.getElementById('b-content').style.display = has ? '' : 'none';
+  if (!has) return;
+
+  var sName  = gv('s-name')  || 'Parinay Saree';
+  var sAddr  = gv('s-addr')  || '';
+  var sPhone = gv('s-phone') || '';
+  var sGST   = gv('s-gst')  || '';
+  var iNum   = gv('inv-num') || 'INV-1000';
+  var iDate  = gv('inv-date')|| '';
+  var cName  = gv('c-name')  || '';
+  var cAddr  = gv('c-addr')  || '';
+  var cPhone = gv('c-phone') || '';
+  var cCity  = gv('c-city')  || '';
+  var gstR   = parseFloat(gv('gst-rate'))  || 0;
+  var discR  = parseFloat(gv('disc-rate')) || 0;
+  var deliv  = parseFloat(gv('delivery'))  || 0;
+  var notes  = gv('notes')   || '';
+
+  setText('b-co-name', sName);
+  setText('b-co-info', [sAddr, sPhone].filter(Boolean).join(' | '));
+  setText('b-inv-num', '#' + iNum);
+  setText('b-inv-dt',  iDate ? fmtDate(iDate) : '');
+  setText('b-gstin',   sGST ? 'GSTIN: ' + sGST : '');
+
+  var ch = '<span class="bld">'+(cName||'—')+'</span>';
+  if (cAddr)  ch += '<br>'+esc(cAddr);
+  if (cCity)  ch += '<br>'+esc(cCity);
+  if (cPhone) ch += '<br>'+esc(cPhone);
+  document.getElementById('b-cust').innerHTML = ch;
+
+  var subtotal = 0;
+  var rows = ITEMS.map(function(it, i){
+    var amt = it.priceNum * it.qty;
+    subtotal += amt;
+    return '<tr>' +
+      '<td style="color:#bbb;font-size:.73rem;">'+(i+1)+'</td>' +
+      '<td><div class="td-n">'+esc(it.name)+'</div><div class="td-c">'+esc(it.category)+'</div></td>' +
+      '<td>'+it.qty+'</td>' +
+      '<td>'+fmt(it.priceNum)+'</td>' +
+      '<td class="td-a">'+fmt(amt)+'</td>' +
+      '</tr>';
+  });
+  document.getElementById('b-tbody').innerHTML = rows.join('');
+
+  var discAmt = subtotal * discR / 100;
+  var after   = subtotal - discAmt;
+  var gstAmt  = after * gstR / 100;
+  var grand   = after + gstAmt + deliv;
+
+  setText('b-sub', fmt(subtotal));
+
+  showEl('b-disc-row', discR > 0);
+  if (discR > 0) { setText('b-dp', discR); setText('b-dv', '-'+fmt(discAmt)); }
+  showEl('b-gst-row', gstR > 0);
+  if (gstR > 0)  { setText('b-gp', gstR);  setText('b-gv', fmt(gstAmt)); }
+  showEl('b-del-row', deliv > 0);
+  if (deliv > 0) { setText('b-dlv', fmt(deliv)); }
+
+  setText('b-total', fmt(grand));
+  setText('b-fn', sName);
+  setText('b-fp', sPhone || 'store contact');
+  showEl('b-notes-out', !!notes);
+  if (notes) setText('b-notes-out', notes);
+}
+
+// ═══════════════════════════════════════════════
+//  INVOICE NUMBER — bump & persist
+// ═══════════════════════════════════════════════
+function bumpInvoiceNumber() {
+  var cur = gv('inv-num');
+  var num = parseInt(cur.replace(/[^0-9]/g,'')) || 1000;
+  localStorage.setItem('parinay_inv_num', num);
+}
+
+// ═══════════════════════════════════════════════
+//  PRINT & DOWNLOAD
+// ═══════════════════════════════════════════════
+function printBill() {
+  if (!ITEMS.length) { toast('Add at least one product before printing.', 'err'); return; }
+  bumpInvoiceNumber();
+  window.print();
+}
+
+function downloadBill() {
+  if (!ITEMS.length) { toast('Add at least one product before downloading.', 'err'); return; }
+  bumpInvoiceNumber();
+  var html = document.getElementById('b-content').outerHTML;
+  var page = '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/><title>Bill '+gv('inv-num')+'</title>' +
+    '<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet"/>' +
+    '<style>*{box-sizing:border-box;margin:0;padding:0;}body{font-family:Outfit,sans-serif;background:#fff;display:flex;justify-content:center;padding:24px;}' +
+    '#w{max-width:660px;width:100%;background:#fff;box-shadow:0 4px 24px rgba(0,0,0,.14);}' +
+    '.b-hdr{background:linear-gradient(135deg,#5a0d28,#7B1338,#9B2048);padding:22px 26px 18px;display:flex;align-items:flex-start;justify-content:space-between;gap:16px;overflow:hidden;}' +
+    '.b-hdr-l{display:flex;align-items:center;gap:14px;}' +
+    '.b-logo{width:68px;height:68px;background:rgba(255,255,255,.12);border:2px solid rgba(255,255,255,.22);border-radius:11px;display:flex;align-items:center;justify-content:center;}' +
+    '.b-logo img{width:58px;height:58px;object-fit:contain;filter:brightness(0) invert(1);}' +
+    '.b-co-name{font-size:1.42rem;font-weight:700;color:#fff;line-height:1.2;}' +
+    '.b-co-tag{font-size:.65rem;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.62);margin:3px 0 7px;}' +
+    '.b-co-info{font-size:.74rem;color:rgba(255,255,255,.8);line-height:1.6;}' +
+    '.b-hdr-r{text-align:right;color:#fff;flex-shrink:0;}' +
+    '.b-inv-lbl{font-size:.62rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#B08D57;}' +
+    '.b-inv-num{font-size:1.65rem;font-weight:700;line-height:1.2;}' +
+    '.b-inv-dt{font-size:.73rem;color:rgba(255,255,255,.7);margin-top:3px;}' +
+    '.b-gold{height:4px;background:linear-gradient(90deg,#B08D57,#e8c97a,#B08D57);}' +
+    '.b-meta{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid #e8e0d8;}' +
+    '.b-mb{padding:15px 20px;}.b-mb:first-child{border-right:1px solid #e8e0d8;}' +
+    '.b-ml{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.13em;color:#7B1338;margin-bottom:7px;display:flex;align-items:center;gap:5px;}' +
+    '.b-ml::before{content:"";width:12px;height:2px;background:#B08D57;border-radius:2px;}' +
+    '.b-mv{font-size:.83rem;color:#2c2c2c;line-height:1.65;font-weight:500;}.b-mv .bld{font-size:.93rem;font-weight:700;}' +
+    '.b-tbl{width:100%;border-collapse:collapse;}' +
+    '.b-tbl thead th{background:linear-gradient(180deg,#7B1338,#8c1540);color:#fff;font-size:.65rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:9px 13px;}' +
+    '.b-tbl thead th:first-child{text-align:left;}.b-tbl thead th:not(:first-child){text-align:right;}' +
+    '.b-tbl tbody tr{border-bottom:1px solid #eee;}.b-tbl tbody tr:nth-child(even){background:#faf7f4;}' +
+    '.b-tbl tbody td{padding:9px 13px;font-size:.82rem;color:#2c2c2c;}' +
+    '.b-tbl tbody td:first-child{text-align:left;}.b-tbl tbody td:not(:first-child){text-align:right;}' +
+    '.td-n{font-weight:600;}.td-c{font-size:.67rem;color:#999;}.td-a{font-weight:700;color:#7B1338;}' +
+    '.b-totals{padding:13px 20px;display:flex;justify-content:flex-end;}.tot-inner{width:250px;}' +
+    '.t-row{display:flex;justify-content:space-between;padding:4px 0;font-size:.82rem;color:#666;border-bottom:1px dashed #ddd;}' +
+    '.t-row:last-of-type{border-bottom:none;}.t-row .tl{font-weight:500;}.t-row .tv{font-weight:600;color:#2c2c2c;}.t-disc .tv{color:#18763e;}' +
+    '.t-grand{margin-top:8px;background:linear-gradient(135deg,#5a0d28,#7B1338);border-radius:8px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;color:#fff;}' +
+    '.t-grand .gl{font-size:.7rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;}' +
+    '.t-grand .gv{font-size:1.3rem;font-weight:700;color:#B08D57;}' +
+    '.b-ftr{border-top:1px solid #e8e0d8;background:#faf7f4;padding:15px 20px;}' +
+    '.b-ftr-note{font-size:.75rem;color:#666;line-height:1.65;margin-bottom:9px;}.b-ftr-note strong{color:#7B1338;}' +
+    '.b-ftr-ty{font-size:.86rem;font-weight:700;color:#7B1338;letter-spacing:.06em;text-transform:uppercase;text-align:center;padding:8px 0 0;border-top:2px solid #f0e0e8;}' +
+    '.b-ftr-ty::before,.b-ftr-ty::after{content:"✦";color:#B08D57;margin:0 6px;}' +
+    '.b-strip{height:5px;background:linear-gradient(90deg,#5a0d28,#7B1338,#B08D57,#7B1338,#5a0d28);}' +
+    '</style></head><body><div id="w">'+html+'</div></body></html>';
+
+  var blob = new Blob([page], {type:'text/html'});
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = (gv('inv-num')||'bill') + '-parinay.html';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast('✅ Bill downloaded!', 'ok');
+}
+
+// ═══════════════════════════════════════════════
+//  CUSTOMER RECORDS  (localStorage)
+// ═══════════════════════════════════════════════
+/*
+  Structure stored in localStorage key: parinay_customers
+  {
+    "customers": [
+      {
+        "id": "cust_<phone>",
+        "name": "Sunita Devi",
+        "phone": "+91 9876543210",
+        "city": "Indore — 452001",
+        "address": "...",
+        "orders": [
+          {
+            "invoiceNum": "INV-1001",
+            "date": "2026-04-12",
+            "items": [{name, qty, price, category}],
+            "grand": 5250
+          }
+        ],
+        "totalSpent": 5250,
+        "lastSeen": "2026-04-12"
+      }
+    ]
+  }
+*/
+
+function loadCustomers() {
+  try { return JSON.parse(localStorage.getItem('parinay_customers') || '{"customers":[]}'); }
+  catch(e) { return {customers:[]}; }
+}
+function saveCustomers(db) {
+  localStorage.setItem('parinay_customers', JSON.stringify(db));
+}
+
+function saveCustomer() {
+  if (!ITEMS.length) { toast('Add at least one product first.', 'err'); return; }
+  var name  = gv('c-name').trim();
+  var phone = gv('c-phone').trim();
+  var city  = gv('c-city').trim();
+  var addr  = gv('c-addr').trim();
+
+  if (!name) { toast('Enter customer name before saving.', 'err'); return; }
+
+  var iNum  = gv('inv-num') || 'INV-1000';
+  var iDate = gv('inv-date') || todayStr();
+  var grand = calcGrand();
+
+  var orderItems = ITEMS.map(function(it){ return {name:it.name, category:it.category, qty:it.qty, unitPrice:it.priceNum, total:it.priceNum*it.qty}; });
+  var order = {invoiceNum:iNum, date:iDate, items:orderItems, grand:grand};
+
+  var db = loadCustomers();
+  // Find customer by phone (or name if no phone)
+  var key = phone || ('__'+name.toLowerCase().replace(/\s+/g,'_'));
+  var idx = -1;
+  for (var i=0; i<db.customers.length; i++) {
+    var c = db.customers[i];
+    if ((phone && c.phone === phone) || (!phone && c.name.toLowerCase() === name.toLowerCase())) { idx = i; break; }
+  }
+
+  if (idx !== -1) {
+    db.customers[idx].orders.push(order);
+    db.customers[idx].totalSpent = (db.customers[idx].totalSpent || 0) + grand;
+    db.customers[idx].lastSeen   = iDate;
+    if (name)  db.customers[idx].name    = name;
+    if (city)  db.customers[idx].city    = city;
+    if (addr)  db.customers[idx].address = addr;
+  } else {
+    db.customers.push({
+      id: 'cust_' + Date.now(),
+      name: name, phone: phone, city: city, address: addr,
+      orders: [order], totalSpent: grand, lastSeen: iDate
+    });
+  }
+
+  saveCustomers(db);
+  bumpInvoiceNumber();
+  toast('💾 Customer record saved!', 'ok');
+}
+
+function openCustModal() {
+  renderCustModal();
+  document.getElementById('cust-modal-overlay').classList.add('open');
+}
+function closeCustModal() {
+  document.getElementById('cust-modal-overlay').classList.remove('open');
+}
+function closeCustModalOnBg(e) {
+  if (e.target === document.getElementById('cust-modal-overlay')) closeCustModal();
+}
+
+function renderCustModal() {
+  var db   = loadCustomers();
+  var list = db.customers;
+  var sumEl = document.getElementById('cust-summary');
+  var listEl= document.getElementById('cust-list');
+
+  var totalSpent = 0;
+  list.forEach(function(c){ totalSpent += (c.totalSpent||0); });
+  sumEl.textContent = list.length + ' customers · ₹' + Math.round(totalSpent).toLocaleString('en-IN') + ' total billed';
+
+  if (!list.length) {
+    listEl.innerHTML = '<div class="cust-empty"><div class="icon">👥</div><p>No customer records yet.<br/>Save a bill to record a customer.</p></div>';
+    return;
+  }
+
+  // Sort by lastSeen descending
+  var sorted = list.slice().sort(function(a,b){ return (b.lastSeen||'') > (a.lastSeen||'') ? 1 : -1; });
+
+  listEl.innerHTML = sorted.map(function(c){
+    var orderCount = (c.orders||[]).length;
+    var histHtml = (c.orders||[]).slice().reverse().map(function(o){
+      var itemNames = (o.items||[]).map(function(i){ return i.qty+'× '+i.name; }).join(', ');
+      return '<div class="cc-inv">' +
+        '<span class="cc-inv-num">'+esc(o.invoiceNum)+'</span>' +
+        '<span class="cc-inv-items">'+esc(itemNames)+'</span>' +
+        '<span class="cc-inv-total">'+fmt(o.grand||0)+'</span>' +
+        '</div>';
+    }).join('');
+
+    return '<div class="cust-card" onclick="toggleCustCard(this)">' +
+      '<div class="cust-card-head">' +
+        '<div><div class="cc-name">'+esc(c.name||'—')+'</div>' +
+        '<div class="cc-phone">'+(c.phone||'')+(c.city?' · '+esc(c.city):'')+'</div></div>' +
+        '<div><div class="cc-spent">'+fmt(c.totalSpent||0)+'</div>' +
+        '<div class="cc-orders">'+orderCount+' order'+(orderCount!==1?'s':'')+'</div></div>' +
+      '</div>' +
+      '<div class="cc-history">'+histHtml+'</div>' +
+      '</div>';
+  }).join('');
+}
+
+function toggleCustCard(el) {
+  el.classList.toggle('expanded');
+}
+
+function exportCustomers() {
+  var db      = loadCustomers();
+  var json    = JSON.stringify(db, null, 2);
+  var blob    = new Blob([json], {type:'application/json'});
+  var a       = document.createElement('a');
+  a.href      = URL.createObjectURL(blob);
+  a.download  = 'customers.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast('✅ customers.json downloaded', 'ok');
+}
+
+function clearCustomers() {
+  if (!confirm('Delete ALL customer records? This cannot be undone.')) return;
+  localStorage.removeItem('parinay_customers');
+  renderCustModal();
+  toast('🗑 Customer records cleared', 'info');
+}
+
+// grand total calculator (pure)
+function calcGrand() {
+  var subtotal = 0;
+  ITEMS.forEach(function(it){ subtotal += it.priceNum * it.qty; });
+  var discR  = parseFloat(gv('disc-rate')) || 0;
+  var gstR   = parseFloat(gv('gst-rate'))  || 0;
+  var deliv  = parseFloat(gv('delivery'))  || 0;
+  var after  = subtotal - subtotal * discR / 100;
+  return after + after * gstR / 100 + deliv;
+}
+
+// ═══════════════════════════════════════════════
+//  NEW BILL
+// ═══════════════════════════════════════════════
+function newBill() {
+  if (ITEMS.length && !confirm('Start a new bill? Current data will be cleared.')) return;
+  ITEMS = []; UID = 1;
+  ['c-name','c-addr','c-phone','c-city','notes'].forEach(function(id){ var el=document.getElementById(id); if(el)el.value=''; });
+  document.getElementById('gst-rate').value  = '5';
+  document.getElementById('disc-rate').value = '0';
+  document.getElementById('delivery').value  = '0';
+
+  // bump invoice number for next bill
+  var lastNum = parseInt(localStorage.getItem('parinay_inv_num') || '999');
+  var nextNum = lastNum + 1;
+  document.getElementById('inv-num').value = 'INV-' + nextNum;
+  document.getElementById('inv-date').value = todayStr();
+
+  rebuildList();
+  render();
+}
+
+// ═══════════════════════════════════════════════
+//  UTILS
+// ═══════════════════════════════════════════════
+function parsePrice(s)  { return parseFloat(String(s||'').replace(/[^0-9.]/g,'')) || 0; }
+function fmt(n)         { return '₹' + Math.round(n).toLocaleString('en-IN'); }
+function gv(id)         { var el=document.getElementById(id); return el ? el.value : ''; }
+function setText(id, v) { var el=document.getElementById(id); if(el) el.textContent=v; }
+function showEl(id, v)  { var el=document.getElementById(id); if(el) el.style.display=v?'':'none'; }
+function esc(s)         { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function todayStr()     { return new Date().toISOString().slice(0,10); }
+function fmtDate(ds) {
+  try { return new Date(ds+'T00:00:00').toLocaleDateString('en-IN',{day:'2-digit',month:'long',year:'numeric'}); }
+  catch(e) { return ds; }
+}
+function toast(msg, type) {
+  var el=document.getElementById('toast');
+  el.textContent=msg; el.className='toast'+(type?' '+type:'');
+  el.classList.add('show');
+  clearTimeout(el._t);
+  el._t = setTimeout(function(){ el.classList.remove('show'); }, 3200);
+}
+
+// ═══════════════════════════════════════════════
+//  START
+// ═══════════════════════════════════════════════
+init();
+</script>
+</body>
+</html>
