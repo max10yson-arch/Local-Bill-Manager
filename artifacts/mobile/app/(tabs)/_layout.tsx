@@ -16,6 +16,7 @@ function NativeTabLayout() {
       <NativeTabs.Trigger name="bills"><Icon sf={{ default: "list.bullet.rectangle", selected: "list.bullet.rectangle.fill" }} /><Label>Bills</Label></NativeTabs.Trigger>
       <NativeTabs.Trigger name="customers"><Icon sf={{ default: "person.2", selected: "person.2.fill" }} /><Label>Customers</Label></NativeTabs.Trigger>
       <NativeTabs.Trigger name="products"><Icon sf={{ default: "shippingbox", selected: "shippingbox.fill" }} /><Label>Catalog</Label></NativeTabs.Trigger>
+      <NativeTabs.Trigger name="reports"><Icon sf={{ default: "chart.bar.doc.horizontal", selected: "chart.bar.doc.horizontal.fill" }} /><Label>Reports</Label></NativeTabs.Trigger>
       <NativeTabs.Trigger name="settings"><Icon sf={{ default: "gearshape", selected: "gearshape.fill" }} /><Label>Settings</Label></NativeTabs.Trigger>
     </NativeTabs>
   );
@@ -50,6 +51,7 @@ function ClassicTabLayout() {
       <Tabs.Screen name="bills" options={{ title: "Bills", tabBarIcon: ({ color }) => isIOS ? <SymbolView name="list.bullet.rectangle" tintColor={color} size={24} /> : <Feather name="list" size={21} color={color} /> }} />
       <Tabs.Screen name="customers" options={{ title: "Customers", tabBarIcon: ({ color }) => isIOS ? <SymbolView name="person.2" tintColor={color} size={24} /> : <Feather name="users" size={21} color={color} /> }} />
       <Tabs.Screen name="products" options={{ title: "Catalog", tabBarIcon: ({ color }) => isIOS ? <SymbolView name="shippingbox" tintColor={color} size={24} /> : <Feather name="package" size={21} color={color} /> }} />
+      <Tabs.Screen name="reports" options={{ title: "Reports", tabBarIcon: ({ color }) => isIOS ? <SymbolView name="chart.bar.doc.horizontal" tintColor={color} size={24} /> : <Feather name="bar-chart-2" size={21} color={color} /> }} />
       <Tabs.Screen name="settings" options={{ title: "Settings", tabBarIcon: ({ color }) => isIOS ? <SymbolView name="gearshape" tintColor={color} size={24} /> : <Feather name="settings" size={21} color={color} /> }} />
     </Tabs>
   );

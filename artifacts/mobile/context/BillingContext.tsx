@@ -116,6 +116,7 @@ type BillingContextValue = {
   clearDraft: () => void;
   saveBill: () => Promise<{ ok: boolean; message: string; customer?: Customer }>;
   saveCustomerProfile: (customer: Omit<Customer, "orders" | "totalSpent" | "lastSeen" | "createdAt">) => Promise<void>;
+  saveDraftCustomer: () => Promise<{ ok: boolean; message: string }>;
   deleteCustomer: (id: string) => Promise<void>;
   loadCustomerIntoDraft: (customer: Customer) => void;
   loadBillForEditing: (customer: Customer, order: Order) => void;
@@ -188,6 +189,14 @@ function createDraft(invoiceNum: number, settings: StoreSettings): BillDraft {
   };
 }
 
+function getInvoiceNumber(value: string) {
+  return Number(String(value || "").replace(/\D/g, "")) || 0;
+}
+
+function getHighestInvoiceNumber(customers: Customer[], storedInvoiceNum: number) {
+  return customers.reduce((highest, customer) => Math.max(highest, ...customer.orders.map((order) => getInvoiceNumber(order.invoiceNum))), storedInvoiceNum);
+}
+
 export function calculateTotals(draft: BillDraft): Totals {
   const subtotal = draft.items.reduce((sum, item) => sum + item.price * item.qty, 0);
   const productDiscount = draft.items.reduce((sum, item) => sum + item.price * item.qty * Math.max(0, item.discount || 0) / 100, 0);
@@ -255,13 +264,16 @@ export function BillingProvider({ children }: { children: React.ReactNode }) {
       const invoiceNumRaw = await AsyncStorage.getItem(STORAGE_KEYS.invoiceNum);
       const invoiceNum = Number(invoiceNumRaw || "1000") || 1000;
       const savedDraft = await readJson<BillDraft | null>(STORAGE_KEYS.draft, null);
-      const savedCustomers = await readJson<Customer[]>(STORAGE_KEYS.customers, []);
+      const savedCustomers = (await readJson<Customer[]>(STORAGE_KEYS.customers, [])).map(normalizeCustomer);
       const savedProducts = await readJson<Product[]>(STORAGE_KEYS.products, fallbackProducts);
+      const highestInvoice = getHighestInvoiceNumber(savedCustomers, invoiceNum);
+      const nextInvoice = Math.max(invoiceNum, highestInvoice + 1);
+      const loadedDraft = savedDraft && (savedDraft.items.length || savedDraft.customerName.trim()) ? savedDraft : createDraft(nextInvoice, savedSettings);
       if (!mounted) return;
       setSettings(savedSettings);
-      setCustomers(savedCustomers.map(normalizeCustomer));
+      setCustomers(savedCustomers);
       setProducts(savedProducts.length ? savedProducts : fallbackProducts);
-      setDraft(savedDraft ?? createDraft(invoiceNum, savedSettings));
+      setDraft(loadedDraft);
       setCatalogStatus(savedProducts.length ? `${savedProducts.length} products available offline` : "Using starter catalog");
       setIsReady(true);
     }
@@ -364,29 +376,33 @@ export function BillingProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const clearDraft = useCallback(() => {
-    setDraft(createDraft(Number(draft.invoiceNum.replace(/\D/g, "")) || 1000, settings));
+    const nextInvoice = getHighestInvoiceNumber(customers, getInvoiceNumber(draft.invoiceNum) || 1000) + 1;
+    setDraft(createDraft(nextInvoice, settings));
     setEditingBill(null);
-  }, [draft.invoiceNum, settings]);
+  }, [customers, draft.invoiceNum, settings]);
 
   const saveBill = useCallback(async () => {
     if (!draft.customerName.trim()) return { ok: false, message: "Customer name is required." };
     if (!draft.items.length) return { ok: false, message: "Add at least one product." };
     const phone = draft.customerPhone.trim();
     const name = draft.customerName.trim();
+    const duplicateInvoice = !editingBill && customers.some((customer) => customer.orders.some((item) => item.invoiceNum.trim().toLowerCase() === draft.invoiceNum.trim().toLowerCase()));
+    if (duplicateInvoice) return { ok: false, message: `${draft.invoiceNum} already exists. Change the invoice number or start a new bill.` };
     const order = createOrderFromDraft(draft, totals, editingBill?.orderId);
     let workingCustomers = customers.map((customer) => editingBill && customer.id === editingBill.customerId ? { ...customer, orders: customer.orders.filter((item) => item.id !== editingBill.orderId) } : customer);
     const existing = workingCustomers.find((customer) => phone ? customer.phone === phone : customer.name.toLowerCase() === name.toLowerCase());
     const nextCustomer: Customer = existing ? normalizeCustomer({ ...existing, name, phone, city: draft.customerCity, address: draft.customerAddress, orders: [order, ...existing.orders] }) : normalizeCustomer({ id: makeId("customer"), name, phone, city: draft.customerCity, address: draft.customerAddress, orders: [order], totalSpent: 0, lastSeen: order.date, createdAt: today() });
     let nextCustomers = existing ? workingCustomers.map((customer) => customer.id === existing.id ? nextCustomer : normalizeCustomer(customer)) : [nextCustomer, ...workingCustomers.map(normalizeCustomer)];
     nextCustomers = nextCustomers.filter((customer) => customer.orders.length || customer.name.trim());
-    const currentNum = Number(draft.invoiceNum.replace(/\D/g, "")) || 1000;
-    const nextNum = Math.max(currentNum + 1, Number(await AsyncStorage.getItem(STORAGE_KEYS.invoiceNum) || "1000") + 1);
+    const currentNum = getInvoiceNumber(draft.invoiceNum) || 1000;
+    const storedNum = Number(await AsyncStorage.getItem(STORAGE_KEYS.invoiceNum) || "1000") || 1000;
+    const nextNum = getHighestInvoiceNumber(nextCustomers, Math.max(currentNum, storedNum)) + 1;
     const nextDraft = createDraft(nextNum, settings);
     setCustomers(nextCustomers);
     setDraft(nextDraft);
     setEditingBill(null);
     await writeJson(STORAGE_KEYS.customers, nextCustomers);
-    if (!editingBill) await AsyncStorage.setItem(STORAGE_KEYS.invoiceNum, String(nextNum));
+    await AsyncStorage.setItem(STORAGE_KEYS.invoiceNum, String(nextNum));
     await writeJson(STORAGE_KEYS.draft, nextDraft);
     return { ok: true, message: editingBill ? `${draft.invoiceNum} updated for ${name}.` : `${draft.invoiceNum} saved for ${name}.`, customer: nextCustomer };
   }, [customers, draft, editingBill, settings, totals]);
@@ -398,6 +414,18 @@ export function BillingProvider({ children }: { children: React.ReactNode }) {
     setCustomers(nextCustomers);
     await writeJson(STORAGE_KEYS.customers, nextCustomers);
   }, [customers]);
+
+  const saveDraftCustomer = useCallback(async () => {
+    const name = draft.customerName.trim();
+    if (!name) return { ok: false, message: "Type a customer name first." };
+    const phone = draft.customerPhone.trim();
+    const existing = customers.find((customer) => phone ? customer.phone === phone : customer.name.toLowerCase() === name.toLowerCase());
+    const nextCustomer = existing ? normalizeCustomer({ ...existing, name, phone, city: draft.customerCity, address: draft.customerAddress }) : normalizeCustomer({ id: makeId("customer"), name, phone, city: draft.customerCity, address: draft.customerAddress, orders: [], totalSpent: 0, lastSeen: "", createdAt: today() });
+    const nextCustomers = existing ? customers.map((customer) => customer.id === existing.id ? nextCustomer : customer) : [nextCustomer, ...customers];
+    setCustomers(nextCustomers);
+    await writeJson(STORAGE_KEYS.customers, nextCustomers);
+    return { ok: true, message: `${name} saved to customers.` };
+  }, [customers, draft.customerAddress, draft.customerCity, draft.customerName, draft.customerPhone]);
 
   const deleteCustomer = useCallback(async (id: string) => {
     const nextCustomers = customers.filter((customer) => customer.id !== id);
@@ -424,7 +452,7 @@ export function BillingProvider({ children }: { children: React.ReactNode }) {
     setEditingBill({ customerId: customer.id, orderId: order.id });
   }, [settings.defaultGst]);
 
-  const value: BillingContextValue = { products, customers, allBills, draft, settings, editingBill, isReady, isSyncing, catalogStatus, totals, stats, updateDraft, updateSettings, syncProducts, addProduct, addItem, updateQty, removeItem, clearDraft, saveBill, saveCustomerProfile, deleteCustomer, loadCustomerIntoDraft, loadBillForEditing, deleteBill };
+  const value: BillingContextValue = { products, customers, allBills, draft, settings, editingBill, isReady, isSyncing, catalogStatus, totals, stats, updateDraft, updateSettings, syncProducts, addProduct, addItem, updateQty, removeItem, clearDraft, saveBill, saveCustomerProfile, saveDraftCustomer, deleteCustomer, loadCustomerIntoDraft, loadBillForEditing, deleteBill };
 
   return <BillingContext.Provider value={value}>{children}</BillingContext.Provider>;
 }
