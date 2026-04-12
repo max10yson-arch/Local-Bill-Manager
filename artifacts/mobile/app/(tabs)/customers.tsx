@@ -1,15 +1,17 @@
 import { Feather } from "@expo/vector-icons";
+import { router } from "expo-router";
 import React, { useMemo, useState } from "react";
 import { Alert, FlatList, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Customer, formatCurrency, useBilling } from "@/context/BillingContext";
 import { useColors } from "@/hooks/useColors";
+import { printInvoice, shareInvoicePdf } from "@/utils/invoicePdf";
 
 export default function CustomersScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { customers, stats, saveCustomerProfile, deleteCustomer, loadCustomerIntoDraft } = useBilling();
+  const { customers, stats, settings, saveCustomerProfile, deleteCustomer, loadCustomerIntoDraft, loadBillForEditing, deleteBill } = useBilling();
   const [query, setQuery] = useState("");
   const [editing, setEditing] = useState<Customer | null>(null);
   const [detail, setDetail] = useState<Customer | null>(null);
@@ -23,6 +25,20 @@ export default function CustomersScreen() {
 
   function openNewCustomer() {
     setEditing({ id: `customer_${Date.now()}`, name: "", phone: "", city: "", address: "", orders: [], totalSpent: 0, lastSeen: "", createdAt: new Date().toISOString().slice(0, 10) });
+  }
+
+  function editOrder(customer: Customer, order: Customer["orders"][number]) {
+    loadBillForEditing(customer, order);
+    setDetail(null);
+    router.push("/");
+  }
+
+  async function printOrder(customer: Customer, order: Customer["orders"][number]) {
+    await printInvoice({ settings, customer, order });
+  }
+
+  async function shareOrder(customer: Customer, order: Customer["orders"][number]) {
+    await shareInvoicePdf({ settings, customer, order });
   }
 
   return (
@@ -86,6 +102,13 @@ export default function CustomersScreen() {
               <View key={order.id} style={[styles.orderCard, { backgroundColor: colors.card, borderColor: colors.border }]}> 
                 <View style={styles.orderHeader}><Text style={[styles.orderNo, { color: colors.foreground }]}>{order.invoiceNum}</Text><Text style={[styles.spend, { color: colors.primary }]}>{formatCurrency(order.grand)}</Text></View>
                 <Text style={[styles.customerMeta, { color: colors.mutedForeground }]}>{order.date} · {order.items.map((item) => `${item.qty}x ${item.name}`).join(", ")}</Text>
+                <Text style={[styles.customerMeta, { color: colors.mutedForeground }]}>Saved discount: {formatCurrency(order.discount || 0)}</Text>
+                <View style={styles.orderActions}>
+                  <Pressable onPress={() => printOrder(detail, order)} style={[styles.orderAction, { backgroundColor: colors.goldSoft }]}><Feather name="printer" size={15} color={colors.primary} /><Text style={[styles.orderActionText, { color: colors.primary }]}>Print</Text></Pressable>
+                  <Pressable onPress={() => shareOrder(detail, order)} style={[styles.orderAction, { backgroundColor: colors.secondary }]}><Feather name="share" size={15} color={colors.secondaryForeground} /><Text style={[styles.orderActionText, { color: colors.secondaryForeground }]}>Share</Text></Pressable>
+                  <Pressable onPress={() => editOrder(detail, order)} style={[styles.orderAction, { backgroundColor: colors.roseSoft }]}><Feather name="edit-2" size={15} color={colors.primary} /><Text style={[styles.orderActionText, { color: colors.primary }]}>Edit</Text></Pressable>
+                  <Pressable onPress={() => Alert.alert("Delete bill", "This removes this invoice from the customer history.", [{ text: "Cancel", style: "cancel" }, { text: "Delete", style: "destructive", onPress: () => deleteBill(detail.id, order.id) }])} style={[styles.orderIcon, { backgroundColor: colors.roseSoft }]}><Feather name="trash-2" size={15} color={colors.destructive} /></Pressable>
+                </View>
               </View>
             )) : <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>No bills saved for this customer yet.</Text>}
           </ScrollView>
@@ -164,6 +187,10 @@ const styles = StyleSheet.create({
   orderCard: { borderWidth: 1, borderRadius: 18, padding: 14, marginBottom: 10 },
   orderHeader: { flexDirection: "row", justifyContent: "space-between" },
   orderNo: { fontFamily: "Inter_700Bold", fontSize: 15 },
+  orderActions: { flexDirection: "row", gap: 8, marginTop: 12 },
+  orderAction: { flex: 1, borderRadius: 14, paddingVertical: 9, alignItems: "center", justifyContent: "center", flexDirection: "row", gap: 5 },
+  orderActionText: { fontFamily: "Inter_700Bold", fontSize: 11 },
+  orderIcon: { width: 38, borderRadius: 14, alignItems: "center", justifyContent: "center" },
   formCard: { borderWidth: 1, borderRadius: 24, padding: 16, gap: 12 },
   inputWrap: { gap: 6 },
   inputLabel: { fontSize: 12, fontFamily: "Inter_700Bold", textTransform: "uppercase", letterSpacing: 0.8 },
