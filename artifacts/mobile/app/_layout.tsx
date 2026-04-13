@@ -15,6 +15,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { BillingProvider } from "@/context/BillingContext";
+import { GitHubAdminProvider } from "@/context/GitHubAdminContext";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -24,6 +25,7 @@ function RootLayoutNav() {
   return (
     <Stack screenOptions={{ headerBackTitle: "Back" }}>
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen name="admin" options={{ headerShown: false }} />
     </Stack>
   );
 }
@@ -51,7 +53,9 @@ export default function RootLayout() {
           <GestureHandlerRootView style={{ flex: 1 }}>
             <KeyboardProvider>
               <BillingProvider>
-                <RootLayoutNav />
+                <GitHubAdminProvider>
+                  <RootLayoutNav />
+                </GitHubAdminProvider>
               </BillingProvider>
             </KeyboardProvider>
           </GestureHandlerRootView>

@@ -1,4 +1,5 @@
 import { Feather } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import { Alert, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -7,6 +8,7 @@ import { formatCurrency, useBilling } from "@/context/BillingContext";
 import { useColors } from "@/hooks/useColors";
 
 export default function SettingsScreen() {
+  const router = useRouter();
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { settings, updateSettings, stats } = useBilling();
@@ -34,6 +36,19 @@ export default function SettingsScreen() {
           <Input label="Default note" value={form.note} onChangeText={(note) => setForm({ ...form, note })} multiline />
         </View>
         <Pressable testID="save-settings" onPress={save} style={[styles.saveButton, { backgroundColor: colors.primary }]}><Feather name="check" size={18} color={colors.primaryForeground} /><Text style={[styles.saveText, { color: colors.primaryForeground }]}>Save settings</Text></Pressable>
+        <Pressable
+          onPress={() => router.push("/admin")}
+          style={[styles.adminLink, { borderColor: colors.border, backgroundColor: colors.card }]}
+        >
+          <Feather name="github" size={20} color={colors.primary} />
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.adminTitle, { color: colors.foreground }]}>GitHub website admin</Text>
+            <Text style={[styles.adminSub, { color: colors.mutedForeground }]}>
+              Edit Parinay Saree Pages repo (data.json, images, translations) with a PAT — no backend.
+            </Text>
+          </View>
+          <Feather name="chevron-right" size={20} color={colors.mutedForeground} />
+        </Pressable>
         <View style={[styles.tipCard, { backgroundColor: colors.goldSoft }]}> 
           <Feather name="database" size={20} color={colors.accent} />
           <Text style={[styles.tipTitle, { color: colors.foreground }]}>Local data storage</Text>
@@ -66,4 +81,14 @@ const styles = StyleSheet.create({
   tipCard: { borderRadius: 22, padding: 16, gap: 7 },
   tipTitle: { fontFamily: "Inter_700Bold", fontSize: 16 },
   tipText: { fontFamily: "Inter_500Medium", lineHeight: 20 },
+  adminLink: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    borderWidth: 1,
+    borderRadius: 22,
+    padding: 16,
+  },
+  adminTitle: { fontFamily: "Inter_700Bold", fontSize: 16 },
+  adminSub: { fontFamily: "Inter_500Medium", fontSize: 13, marginTop: 4, lineHeight: 18 },
 });

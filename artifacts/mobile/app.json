@@ -14,9 +14,15 @@
       "backgroundColor": "#7B1338"
     },
     "ios": {
-      "supportsTablet": false
+      "supportsTablet": false,
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "Select photos for product and banner uploads to your GitHub repository.",
+        "NSCameraUsageDescription": "Take photos for product listings when you choose the camera."
+      }
     },
-    "android": {},
+    "android": {
+      "package": "com.parinay.mobile"
+    },
     "web": {
       "favicon": "./assets/images/icon.png"
     },
@@ -28,7 +34,13 @@
         }
       ],
       "expo-font",
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow access to photos to upload catalog images to GitHub."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
