@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
+  Image,
   Modal,
   Pressable,
   ScrollView,
@@ -331,9 +332,19 @@ export function SareeAdminDashboard() {
     );
   }, [translationKeys, transSearch, gh.translations]);
 
+  const getImgUrl = (path: string) => {
+    if (!gh.auth || !path) return null;
+    if (path.startsWith("http")) return path;
+    return `https://raw.githubusercontent.com/${gh.auth.username}/${gh.auth.repo}/main/${path}`;
+  };
+
+  const statusDot: Record<string, string> = { live: "#38a169", hidden: "#d69e2e", archived: "#e53e3e" };
+  const statusLabel: Record<string, string> = { live: "🟢", hidden: "🟡", archived: "🔴" };
+
   const renderProduct = ({ item }: { item: Product }) => {
     const st = item.status || "live";
     const checked = selected.has(item.id);
+    const imgUrl = getImgUrl(item.image);
     return (
       <Pressable
         onPress={() => setEditProduct(item)}
@@ -342,13 +353,27 @@ export function SareeAdminDashboard() {
         <Pressable onPress={() => toggleSelect(item.id)} style={styles.checkHit}>
           <Feather name={checked ? "check-square" : "square"} size={22} color={colors.primary} />
         </Pressable>
+        {imgUrl ? (
+          <Image source={{ uri: imgUrl }} style={styles.thumb} resizeMode="cover" />
+        ) : (
+          <View style={[styles.thumb, styles.thumbPlaceholder, { backgroundColor: colors.border }]}>
+            <Feather name="image" size={14} color={colors.mutedForeground} />
+          </View>
+        )}
         <View style={styles.rowBody}>
-          <Text style={[styles.rowTitle, { color: colors.foreground }]} numberOfLines={1}>
-            {item.name}
-          </Text>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+            <Text style={[styles.rowTitle, { color: colors.foreground, flexShrink: 1 }]} numberOfLines={1}>
+              {item.name}
+            </Text>
+            <Text style={{ fontSize: 12 }}>{statusLabel[st] || "🟢"}</Text>
+            {item.badge ? (
+              <Text style={[styles.badgePill, { backgroundColor: statusDot[st] + "22", color: statusDot[st] }]}>
+                {item.badge}
+              </Text>
+            ) : null}
+          </View>
           <Text style={[styles.rowMeta, { color: colors.mutedForeground }]}>
-            {item.price} · stock {item.stock} · {st}
-            {item.badge ? ` · ${item.badge}` : ""}
+            {item.price} · stock {item.stock}{item.discount ? ` · ${item.discount}% off` : ""}
           </Text>
         </View>
         <Feather name="chevron-right" size={20} color={colors.mutedForeground} />
@@ -781,6 +806,12 @@ function EditProductBody({
   const [image, setImage] = useState(product.image);
   const [more, setMore] = useState<string[]>([...(product.more_images || [])]);
 
+  const getImgUrl = (path: string) => {
+    if (!gh.auth || !path) return null;
+    if (path.startsWith("http")) return path;
+    return `https://raw.githubusercontent.com/${gh.auth.username}/${gh.auth.repo}/main/${path}`;
+  };
+
   const save = async () => {
     setBusy(true);
     try {
@@ -847,56 +878,126 @@ function EditProductBody({
     ]);
   };
 
+  const mainImgUrl = getImgUrl(image);
+  const statusColors: Record<string, string> = { live: "#38a169", hidden: "#d69e2e", archived: "#e53e3e" };
+  const badgeColors: Record<string, string> = { new: "#38a169", sale: "#e53e3e", trending: "#805ad5" };
+
   return (
-    <ScrollView style={{ maxHeight: 480 }}>
-      <TextInput value={name} onChangeText={setName} style={styles.input} />
-      <TextInput value={price} onChangeText={setPrice} style={styles.input} />
-      <View style={{ flexDirection: "row", gap: 8 }}>
-        <TextInput value={stock} onChangeText={setStock} keyboardType="numeric" style={[styles.input, { flex: 1 }]} />
-        <TextInput value={discount} onChangeText={setDiscount} keyboardType="numeric" style={[styles.input, { flex: 1 }]} />
-      </View>
-      <TextInput value={desc} onChangeText={setDesc} multiline style={[styles.input, styles.inputMulti]} />
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginVertical: 8 }}>
-        {(["live", "hidden", "archived"] as const).map((s) => (
-          <Pressable key={s} onPress={() => setStatus(s)} style={[styles.catChip, status === s && { backgroundColor: "#7B1338" }]}>
-            <Text style={{ color: status === s ? "#fff" : "#000" }}>{s}</Text>
-          </Pressable>
-        ))}
-      </View>
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 8 }}>
-        {(["", "new", "sale", "trending"] as const).map((b) => (
-          <Pressable key={b || "n"} onPress={() => setBadge(b)} style={[styles.catChip, badge === b && { backgroundColor: "#B08D57" }]}>
-            <Text>{b || "no badge"}</Text>
-          </Pressable>
-        ))}
-      </View>
-      <Pressable onPress={() => void replaceMain()} style={styles.secondaryBtn}>
-        <Text>Replace main image</Text>
-      </Pressable>
-      <Text style={{ fontSize: 11, color: "#666", marginVertical: 4 }}>{image}</Text>
-      <Pressable onPress={() => void addExtra()} style={styles.secondaryBtn}>
-        <Text>Add extra image</Text>
-      </Pressable>
-      {more.map((m) => (
-        <View key={m} style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 4 }}>
-          <Text numberOfLines={1} style={{ flex: 1, fontSize: 11 }}>
-            {m}
-          </Text>
-          <Pressable onPress={() => removeExtra(m)}>
-            <Text style={{ color: "#c53030" }}>✕</Text>
-          </Pressable>
+    <ScrollView style={{ maxHeight: 520 }} keyboardShouldPersistTaps="handled">
+      <View style={{ flexDirection: "row", gap: 12, marginBottom: 14 }}>
+        <Pressable onPress={() => void replaceMain()} style={styles.mainImgWrap}>
+          {mainImgUrl ? (
+            <Image source={{ uri: mainImgUrl }} style={styles.mainImg} resizeMode="cover" />
+          ) : (
+            <View style={[styles.mainImg, styles.thumbPlaceholder]}>
+              <Feather name="image" size={24} color="#aaa" />
+            </View>
+          )}
+          <View style={styles.imgEditBadge}>
+            <Feather name="camera" size={12} color="#fff" />
+          </View>
+        </Pressable>
+        <View style={{ flex: 1, gap: 8 }}>
+          <View>
+            <Text style={styles.editLabel}>Product Name</Text>
+            <TextInput value={name} onChangeText={setName} placeholder="Product name" style={styles.input} placeholderTextColor="#aaa" />
+          </View>
+          <View>
+            <Text style={styles.editLabel}>Price</Text>
+            <TextInput value={price} onChangeText={setPrice} placeholder="₹0" style={styles.input} placeholderTextColor="#aaa" />
+          </View>
         </View>
-      ))}
-      <View style={{ flexDirection: "row", gap: 12, marginTop: 16 }}>
-        <Pressable onPress={onClose} style={styles.modalBtn}>
-          <Text>Cancel</Text>
-        </Pressable>
-        <Pressable onPress={() => void save()} style={[styles.modalBtn, { backgroundColor: "#276749" }]}>
-          <Text style={{ color: "#fff", fontWeight: "700" }}>Save</Text>
+      </View>
+
+      <View style={{ flexDirection: "row", gap: 8, marginBottom: 8 }}>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.editLabel}>Stock</Text>
+          <TextInput value={stock} onChangeText={setStock} keyboardType="numeric" placeholder="0" style={styles.input} placeholderTextColor="#aaa" />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.editLabel}>Discount %</Text>
+          <TextInput value={discount} onChangeText={setDiscount} keyboardType="numeric" placeholder="0" style={styles.input} placeholderTextColor="#aaa" />
+        </View>
+      </View>
+
+      <View style={{ marginBottom: 8 }}>
+        <Text style={styles.editLabel}>Description</Text>
+        <TextInput value={desc} onChangeText={setDesc} multiline placeholder="Product description…" style={[styles.input, styles.inputMulti]} placeholderTextColor="#aaa" />
+      </View>
+
+      <View style={{ marginBottom: 8 }}>
+        <Text style={styles.editLabel}>Status</Text>
+        <View style={{ flexDirection: "row", gap: 8 }}>
+          {(["live", "hidden", "archived"] as const).map((s) => (
+            <Pressable
+              key={s}
+              onPress={() => setStatus(s)}
+              style={[
+                styles.catChip,
+                status === s && { backgroundColor: statusColors[s], borderColor: statusColors[s] },
+              ]}
+            >
+              <Text style={{ color: status === s ? "#fff" : "#555", fontWeight: "600", fontSize: 13 }}>
+                {s === "live" ? "🟢" : s === "hidden" ? "🟡" : "🔴"} {s}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+      </View>
+
+      <View style={{ marginBottom: 12 }}>
+        <Text style={styles.editLabel}>Badge</Text>
+        <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
+          {(["", "new", "sale", "trending"] as const).map((b) => (
+            <Pressable
+              key={b || "none"}
+              onPress={() => setBadge(b)}
+              style={[
+                styles.catChip,
+                badge === b && b && { backgroundColor: badgeColors[b] + "22", borderColor: badgeColors[b] },
+                badge === b && !b && { backgroundColor: "#eee", borderColor: "#999" },
+              ]}
+            >
+              <Text style={{ color: badge === b && b ? badgeColors[b] : "#555", fontWeight: "600", fontSize: 13 }}>
+                {b || "none"}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+      </View>
+
+      <Text style={styles.editLabel}>Extra Images</Text>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 8 }}>
+        {more.map((m) => {
+          const mUrl = getImgUrl(m);
+          return (
+            <View key={m} style={styles.extraImgWrap}>
+              {mUrl ? (
+                <Image source={{ uri: mUrl }} style={styles.extraImg} resizeMode="cover" />
+              ) : (
+                <View style={[styles.extraImg, styles.thumbPlaceholder]} />
+              )}
+              <Pressable onPress={() => removeExtra(m)} style={styles.extraRemove}>
+                <Text style={{ color: "#fff", fontSize: 10, fontWeight: "700" }}>✕</Text>
+              </Pressable>
+            </View>
+          );
+        })}
+        <Pressable onPress={() => void addExtra()} style={styles.extraImgAdd}>
+          <Feather name="plus" size={20} color="#888" />
         </Pressable>
       </View>
-      <Pressable onPress={delProduct} style={{ marginTop: 20, marginBottom: 24 }}>
-        <Text style={{ color: "#c53030", textAlign: "center" }}>Delete product</Text>
+
+      <View style={{ flexDirection: "row", gap: 10, marginTop: 8 }}>
+        <Pressable onPress={onClose} style={[styles.modalBtn, { flex: 1 }]}>
+          <Text style={{ textAlign: "center", fontWeight: "600" }}>Cancel</Text>
+        </Pressable>
+        <Pressable onPress={() => void save()} style={[styles.modalBtn, { flex: 2, backgroundColor: "#276749", borderColor: "#276749" }]}>
+          <Text style={{ color: "#fff", fontWeight: "700", textAlign: "center" }}>Save Changes</Text>
+        </Pressable>
+      </View>
+      <Pressable onPress={delProduct} style={{ marginTop: 16, marginBottom: 24, padding: 12 }}>
+        <Text style={{ color: "#c53030", textAlign: "center", fontWeight: "600" }}>🗑 Delete Product</Text>
       </Pressable>
     </ScrollView>
   );
@@ -997,9 +1098,20 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   checkHit: { paddingRight: 8 },
+  thumb: { width: 50, height: 50, borderRadius: 8, marginRight: 10 },
+  thumbPlaceholder: { alignItems: "center", justifyContent: "center" },
+  badgePill: { fontSize: 10, fontWeight: "700", paddingHorizontal: 6, paddingVertical: 2, borderRadius: 99 },
   rowBody: { flex: 1 },
   rowTitle: { fontSize: 16, fontWeight: "700" },
   rowMeta: { fontSize: 12, marginTop: 2 },
+  editLabel: { fontSize: 11, fontWeight: "700", color: "#666", textTransform: "uppercase", letterSpacing: 0.6, marginBottom: 4 },
+  mainImgWrap: { position: "relative", width: 90, height: 90 },
+  mainImg: { width: 90, height: 90, borderRadius: 10, borderWidth: 1, borderColor: "#ddd", backgroundColor: "#f5f5f5" },
+  imgEditBadge: { position: "absolute", bottom: 4, right: 4, backgroundColor: "#7B1338", borderRadius: 99, width: 22, height: 22, alignItems: "center", justifyContent: "center" },
+  extraImgWrap: { position: "relative" },
+  extraImg: { width: 60, height: 60, borderRadius: 8, borderWidth: 1, borderColor: "#ddd", backgroundColor: "#f5f5f5" },
+  extraRemove: { position: "absolute", top: -6, right: -6, backgroundColor: "#e53e3e", borderRadius: 99, width: 18, height: 18, alignItems: "center", justifyContent: "center" },
+  extraImgAdd: { width: 60, height: 60, borderRadius: 8, borderWidth: 2, borderColor: "#ddd", borderStyle: "dashed", alignItems: "center", justifyContent: "center" },
   modalBackdrop: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.5)",

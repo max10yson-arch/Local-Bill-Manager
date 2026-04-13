@@ -303,7 +303,7 @@ export const GitHubAdminProvider: React.FC<{ children: React.ReactNode }> = ({ c
       { compress: 0.82, format: ImageManipulator.SaveFormat.WEBP },
     );
     const b64 = await FileSystem.readAsStringAsync(manipulated.uri, {
-      encoding: FileSystem.EncodingType.Base64,
+      encoding: "base64",
     });
     const existing = await getRepoFile(a.username, a.repo, destPath, a.token);
     const existingSha = existing?.sha ?? null;
