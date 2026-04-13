@@ -21,7 +21,10 @@
       }
     },
     "android": {
-      "package": "com.parinay.mobile"
+      "package": "com.parinay.mobile",
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "favicon": "./assets/images/icon.png"
@@ -45,6 +48,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "58a63e03-3647-49c6-b135-e629b9610226"
+      }
+    },
+    "owner": "maxten1son"
   }
 }

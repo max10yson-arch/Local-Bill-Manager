@@ -407,7 +407,7 @@ export function BillingProvider({ children }: { children: React.ReactNode }) {
     return { ok: true, message: editingBill ? `${draft.invoiceNum} updated for ${name}.` : `${draft.invoiceNum} saved for ${name}.`, customer: nextCustomer };
   }, [customers, draft, editingBill, settings, totals]);
 
-  const saveCustomerProfile = useCallback(async (customer) => {
+  const saveCustomerProfile = useCallback(async (customer: Partial<Customer> & { id: string; name: string; phone: string; city: string; address: string }) => {
     const existing = customers.find((item) => item.id === customer.id);
     const nextCustomer: Customer = existing ? normalizeCustomer({ ...existing, ...customer }) : normalizeCustomer({ ...customer, orders: [], totalSpent: 0, lastSeen: "", createdAt: today() });
     const nextCustomers = existing ? customers.map((item) => item.id === customer.id ? nextCustomer : item) : [nextCustomer, ...customers];

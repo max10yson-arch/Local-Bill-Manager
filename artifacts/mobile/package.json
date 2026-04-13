@@ -10,7 +10,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "android": "expo run:android",
     "ios": "expo run:ios",
-    "android:apk": "cd android && ./gradlew assembleRelease"
+    "android:apk": "cd android && ./gradlew assembleRelease",
+    "eas:apk": "npx eas-cli@latest build --platform android --profile apk"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
@@ -60,10 +61,12 @@
     "zod-validation-error": "^3.4.0"
   },
   "dependencies": {
+    "@react-navigation/native": "^7.2.2",
     "expo-file-system": "~18.0.12",
     "expo-image-manipulator": "~13.0.6",
     "expo-print": "^15.0.8",
     "expo-sharing": "^14.0.8",
+    "expo-updates": "~0.27.5",
     "react-native-draggable-flatlist": "^4.0.3"
   }
 }

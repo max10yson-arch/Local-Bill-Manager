@@ -15,7 +15,7 @@ export function AdminPanel() {
 
   useEffect(() => {
     if (!gh.isAuthed) return;
-    const sub = navigation.addListener("beforeRemove", (e) => {
+    const sub = navigation.addListener("beforeRemove", (e: any) => {
       if (!gh.hasUnsavedChanges && !gh.hasUnsavedTranslations) return;
       e.preventDefault();
       Alert.alert("Unsaved changes", "Commit or discard your edits before leaving.", [

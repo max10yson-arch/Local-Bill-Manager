@@ -58,8 +58,8 @@ export default function ReportsScreen() {
   return (
     <View style={[styles.screen, { backgroundColor: colors.background, paddingTop: Platform.OS === "web" ? 67 : 0 }]}> 
       <FlatList
-        data={mode === "customer" ? customerRows : filtered}
-        keyExtractor={(item) => mode === "customer" ? (item as typeof customerRows[number]).key : (item as BillListItem).id}
+        data={(mode === "customer" ? customerRows : filtered) as any}
+        keyExtractor={(item: any) => mode === "customer" ? item.key : item.id}
         contentContainerStyle={[styles.list, { paddingBottom: insets.bottom + 110 }]}
         ListHeaderComponent={<View style={styles.headerStack}>
           <View style={[styles.hero, { backgroundColor: colors.primary }]}> 
@@ -84,7 +84,7 @@ export default function ReportsScreen() {
             <Pressable onPress={() => shareSalesReport(reportPayload)} style={[styles.actionButton, { backgroundColor: colors.goldSoft }]}><Feather name="share" size={17} color={colors.accent} /><Text style={[styles.actionText, { color: colors.accent }]}>Share PDF</Text></Pressable>
           </View>
         </View>}
-        renderItem={({ item }) => mode === "customer" ? <CustomerRow item={item as typeof customerRows[number]} /> : <BillRow item={item as BillListItem} />}
+        renderItem={({ item }: { item: any }) => mode === "customer" ? <CustomerRow item={item} /> : <BillRow item={item} />}
         ListEmptyComponent={<View style={[styles.empty, { backgroundColor: colors.card, borderColor: colors.border }]}><Feather name="bar-chart-2" size={28} color={colors.accent} /><Text style={[styles.emptyTitle, { color: colors.foreground }]}>No sales in this range</Text><Text style={[styles.emptyText, { color: colors.mutedForeground }]}>Change the date filter or save more bills.</Text></View>}
       />
     </View>

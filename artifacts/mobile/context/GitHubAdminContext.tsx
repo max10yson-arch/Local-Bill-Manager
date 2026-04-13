@@ -211,6 +211,20 @@ export const GitHubAdminProvider: React.FC<{ children: React.ReactNode }> = ({ c
       if (!creds) return;
       const parsed = JSON.parse(creds) as GitHubAuth;
       setAuth(parsed);
+
+      // Try to load cached data first for immediate UI
+      const cached = await AsyncStorage.getItem(GITHUB_CACHED_DATA);
+      if (cached) {
+        try {
+          const data = JSON.parse(cached) as CatalogRoot;
+          const norm = normalizeCatalog(data);
+          setCatalog(norm);
+          setOriginalCatalogJson(cached);
+        } catch (e) {
+          console.warn("Failed to parse cached catalog", e);
+        }
+      }
+
       setLoading(true);
       try {
         await loadCatalogFromNetwork(parsed);
